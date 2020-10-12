@@ -1,14 +1,14 @@
 .PHONY: build
 build:
-	docker-compose build s3-to-postgres-data-pipeline
+	docker-compose build address-to-postgres-data-pipeline
 
 .PHONY: shell
 shell:
-	docker-compose run s3-to-postgres-data-pipeline bash
+	docker-compose run address-to-postgres-data-pipeline bash
 
 .PHONY: test
 test:
-	docker-compose build s3-to-postgres-data-pipeline-test && docker-compose up s3-to-postgres-data-pipeline-test
+	docker-compose build address-to-postgres-data-pipeline-test && docker-compose up address-to-postgres-data-pipeline-test
 
 .PHONY: lint
 lint:

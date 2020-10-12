@@ -54,13 +54,13 @@ commands:
       - run:
           name: Build lambda
           command: |
-            cd ./S3ToPostgresDataPipeline/
+            cd ./AddressDataPipeline/
             chmod +x ./build.sh
             ./build.sh
       - run:
           name: Deploy lambda
           command: |
-            cd ./S3ToPostgresDataPipeline/
+            cd ./AddressDataPipeline/
             sls deploy --stage <<parameters.stage>> --conceal
 
 jobs:
@@ -81,10 +81,10 @@ jobs:
       - setup_remote_docker
       - run:
           name: build
-          command: docker-compose build s3-to-postgres-data-pipeline-test
+          command: docker-compose build address-to-postgres-data-pipeline-test
       - run:
           name: Run tests
-          command: docker-compose run s3-to-postgres-data-pipeline-test
+          command: docker-compose run address-to-postgres-data-pipeline-test
   assume-role-development:
     executor: docker-python
     steps:

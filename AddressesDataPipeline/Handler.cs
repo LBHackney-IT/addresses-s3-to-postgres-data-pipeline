@@ -6,7 +6,7 @@ using Amazon.S3.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Npgsql;
-using S3ToPostgresDataPipeline.Database;
+using AddressDataPipeline.Database;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,7 +17,7 @@ using System.Threading;
 [assembly: LambdaSerializer(
     typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
 
-namespace S3ToPostgresDataPipeline
+namespace AddressDataPipeline
 {
     public static class Program
     {
@@ -49,10 +49,11 @@ namespace S3ToPostgresDataPipeline
                     var s3 = record.S3;
                     try
                     {
+                        string tableName = Environment.GetEnvironmentVariable("DB_TABLE_NAME");
                         //truncate correct table
-                        _databaseActions.TruncateTable(context,Environment.GetEnvironmentVariable("DB_TABLE_NAME"));
+                        _databaseActions.TruncateTable(context,tableName);
                         // load csv data into table
-                        _databaseActions.CopyDataToDatabase(context, record.AwsRegion, s3.Bucket.Name, s3.Object.Key);                   
+                        _databaseActions.CopyDataToDatabase(tableName ,context, record.AwsRegion, s3.Bucket.Name, s3.Object.Key);                   
                     }
                     catch (NpgsqlException ex)
                     {

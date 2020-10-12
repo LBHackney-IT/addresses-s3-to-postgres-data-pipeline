@@ -8,4 +8,4 @@ then
 fi
 
 dotnet restore
-dotnet lambda package --configuration Debug --framework netcoreapp3.1 --output-package bin/release/netcoreapp3.1/S3ToPostgresDataPipeline.zip
+dotnet lambda package --configuration Debug --framework netcoreapp3.1 --output-package bin/release/netcoreapp3.1/AddressDataPipeline.zip

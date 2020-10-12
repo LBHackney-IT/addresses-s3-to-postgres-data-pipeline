@@ -1,4 +1,4 @@
-service: qlikDataMigration
+service: AddressesDataPipeline
 provider:
   name: aws
   region: eu-west-2
@@ -11,13 +11,13 @@ package:
 
 functions:
   load-csv:
-    handler: S3ToPostgresDataPipeline::S3ToPostgresDataPipeline.Handler::LoadCsv
+    handler: AddressesDataPipeline::AddressesDataPipeline.Handler::LoadCsv
     role: dataPipelineLambdaExecutionRole
     package:
-      artifact: bin/release/netcoreapp3.1/S3ToPostgresDataPipeline.zip
+      artifact: bin/release/netcoreapp3.1/AddressesDataPipeline.zip
     events:
       - s3:
-          bucket: drop-bucket-csv-to-postgres
+          bucket: addresses-bucket-csv-to-postgres
           event: s3:ObjectCreated:*
           rules:
             - suffix: .csv
