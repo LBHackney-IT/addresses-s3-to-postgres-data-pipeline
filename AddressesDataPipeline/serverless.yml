@@ -13,11 +13,18 @@ functions:
   load-csv:
     handler: AddressesDataPipeline::AddressesDataPipeline.Handler::LoadCsv
     role: dataPipelineLambdaExecutionRole
+    environment:
+      DB_HOST: ${ssm:/addresses-api/${self:provider.stage}/postgres-hostname}
+      DB_PORT: ${ssm:/addresses-api/${self:provider.stage}/postgres-port}
+      DB_USERNAME: ${ssm:/addresses-api/${self:provider.stage}/postgres-username}
+      DB_PASSWORD: ${ssm:/addresses-api/${self:provider.stage}/postgres-password}
+      DB_DATABASE: addresses_mirror
+      DB_TABLE_NAME: address_base
     package:
       artifact: bin/release/netcoreapp3.1/AddressesDataPipeline.zip
     events:
       - s3:
-          bucket: addresses-bucket-csv-to-postgres
+          bucket: ${self:custom.bucketName.${opt:stage}}
           event: s3:ObjectCreated:*
           rules:
             - suffix: .csv
@@ -85,3 +92,7 @@ custom:
       subnetIds:
         - subnet-01d3657f97a243261
         - subnet-0b7b8fea07efabf34
+  bucketName:
+    development: addresses-bucket-csv-to-postgres-development
+    staging: addresses-bucket-csv-to-postgres-staging
+    production: addresses-bucket-csv-to-postgres-production
