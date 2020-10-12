@@ -18,8 +18,8 @@ functions:
       DB_PORT: ${ssm:/addresses-api/${self:provider.stage}/postgres-port}
       DB_USERNAME: ${ssm:/addresses-api/${self:provider.stage}/postgres-username}
       DB_PASSWORD: ${ssm:/addresses-api/${self:provider.stage}/postgres-password}
-      DB_DATABASE: addresses_mirror
-      DB_TABLE_NAME: address_base
+      DB_DATABASE: ${ssm:/addresses-api/${self:provider.stage}/postgres-database}
+      DB_TABLE_NAME: ${ssm:/addresses-api/${self:provider.stage}/postgres-table}
     package:
       artifact: bin/release/netcoreapp3.1/AddressesDataPipeline.zip
     events:
