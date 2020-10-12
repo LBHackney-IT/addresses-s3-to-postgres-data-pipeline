@@ -29,7 +29,7 @@ namespace AddressDataPipeline
     public class Handler
     {
         private IDatabaseActions _databaseActions;
-        
+
         public Handler(IDatabaseActions databaseActions)
         {
             _databaseActions = databaseActions;
@@ -45,15 +45,15 @@ namespace AddressDataPipeline
                 var connection = _databaseActions.SetupDatabase(context);
                 foreach (var record in s3Event.Records)
                 {
-                   LambdaLogger.Log("Inside of the s3 events loop");
+                    LambdaLogger.Log("Inside of the s3 events loop");
                     var s3 = record.S3;
                     try
                     {
                         string tableName = Environment.GetEnvironmentVariable("DB_TABLE_NAME");
                         //truncate correct table
-                        _databaseActions.TruncateTable(context,tableName);
+                        _databaseActions.TruncateTable(context, tableName);
                         // load csv data into table
-                        _databaseActions.CopyDataToDatabase(tableName ,context, record.AwsRegion, s3.Bucket.Name, s3.Object.Key);                   
+                        _databaseActions.CopyDataToDatabase(tableName, context, record.AwsRegion, s3.Bucket.Name, s3.Object.Key);
                     }
                     catch (NpgsqlException ex)
                     {
@@ -65,7 +65,7 @@ namespace AddressDataPipeline
                     LambdaLogger.Log("End of function");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LambdaLogger.Log($"Exception has occurred - {ex.Message} {ex.InnerException} {ex.StackTrace}");
                 throw ex;
