@@ -50,8 +50,9 @@ namespace AddressesDataPipeline.Tests
         [Test]
         public void CanCreateTable()
         {
-            _databaseActions.CreateTable(_contextMock.Object, "dbo.test2");
-            TableExists("dbo", "test2").Should().BeTrue();
+            var tableName = "testtablecreate";
+            _databaseActions.CreateTable(_contextMock.Object, tableName);
+            TableExists(tableName).Should().BeTrue();
         }
 
         [TearDown]
@@ -74,13 +75,12 @@ namespace AddressesDataPipeline.Tests
             return Convert.ToInt64(result);
         }
 
-        private bool TableExists(string schema, string table)
+        private bool TableExists(string table)
         {
             var npgsqlCommand = _dbConnection.CreateCommand();
             npgsqlCommand.CommandText = $@"SELECT EXISTS(SELECT FROM pg_catalog.pg_class c
                                        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-                                       WHERE n.nspname = '{schema}'
-                                       AND c.relname = '{table}'
+                                       WHERE c.relname = '{table}'
                                        );";
 
             var result = npgsqlCommand.ExecuteScalar();
