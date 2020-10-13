@@ -6,3 +6,5 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider", Justification = "<Pending>", Scope = "member", Target = "~M:AddressesDataPipeline.Tests.DatabaseTests.CountRows~System.Int64")]
+[assembly: SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "<Pending>", Scope = "member", Target = "~M:AddressesDataPipeline.Tests.DatabaseTests.TableExists(System.String)~System.Boolean")]
+[assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider", Justification = "<Pending>", Scope = "member", Target = "~M:AddressesDataPipeline.Tests.DatabaseTests.TableExists(System.String)~System.Boolean")]
