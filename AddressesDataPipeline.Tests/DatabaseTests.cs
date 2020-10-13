@@ -4,9 +4,9 @@ using FluentAssertions;
 using Moq;
 using Npgsql;
 using NUnit.Framework;
-using AddressDataPipeline.Database;
+using AddressesDataPipeline.Database;
 
-namespace AddressDataPipeline.Tests
+namespace AddressesDataPipeline.Tests
 {
     [TestFixture]
     public class DatabaseTests
