@@ -1,4 +1,4 @@
-service: AddressesDataPipeline
+service: addresses-data-pipeline
 provider:
   name: aws
   region: eu-west-2
