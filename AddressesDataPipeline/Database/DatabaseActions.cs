@@ -5,17 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace S3ToPostgresDataPipeline.Database
+namespace AddressDataPipeline.Database
 {
     public class DatabaseActions : IDatabaseActions
     {
         private NpgsqlConnection _npgsqlConnection;
 
-        public int CopyDataToDatabase(ILambdaContext context, string awsRegion, string bucketName, string objectKey)
+        public int CopyDataToDatabase(string tableName, ILambdaContext context, string awsRegion, string bucketName, string objectKey)
         {
             var loadDataCommand = _npgsqlConnection.CreateCommand();
 
-            var loadDataFromCSV = @"SELECT aws_s3.table_import_from_s3('qlik_vulnerability','','(FORMAT csv, HEADER)',@bucket, @objectkey, @awsregion);";
+            var loadDataFromCSV = @"SELECT aws_s3.table_import_from_s3(@tableName,'','(FORMAT csv, HEADER)',@bucket, @objectkey, @awsregion);";
             loadDataCommand.CommandText = loadDataFromCSV;
             loadDataCommand.Parameters.AddWithValue("bucket", bucketName);
             loadDataCommand.Parameters.AddWithValue("objectkey", objectKey);
@@ -30,16 +30,16 @@ namespace S3ToPostgresDataPipeline.Database
             return rowsAffected;
         }
 
-        public int TruncateTable(ILambdaContext context,string tableName)
+        public int TruncateTable(ILambdaContext context, string tableName)
         {
-            var npgsqlCommand = _npgsqlConnection.CreateCommand();             
+            var npgsqlCommand = _npgsqlConnection.CreateCommand();
             LambdaLogger.Log($"Table name to truncate {tableName}");
             //TODO improve security in below line
-            var truncateTableQuery =$"TRUNCATE TABLE {tableName};";
+            var truncateTableQuery = $"TRUNCATE TABLE {tableName};";
             npgsqlCommand.CommandText = truncateTableQuery;
             var rowsAffected = npgsqlCommand.ExecuteNonQuery();
 
-            return rowsAffected;              
+            return rowsAffected;
         }
         public NpgsqlConnection SetupDatabase(ILambdaContext context)
         {
@@ -48,7 +48,7 @@ namespace S3ToPostgresDataPipeline.Database
                 $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
                 $"Username={Environment.GetEnvironmentVariable("DB_USERNAME") ?? "postgres"};" +
                 $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "password"};" +
-                $"Database={Environment.GetEnvironmentVariable("DB_DATABASE") ?? "s3-to-postgres-data-pipeline-test-db"}" + ";CommandTimeout=120;";
+                $"Database={Environment.GetEnvironmentVariable("DB_DATABASE") ?? "address-to-postgres-data-pipeline-test-db"}" + ";CommandTimeout=120;";
             try
             {
                 var connection = new NpgsqlConnection(connString);

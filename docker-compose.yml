@@ -1,10 +1,10 @@
 version: "3.2"
 
 services:
-  s3-to-postgres-data-pipeline:
-    image: s3-to-postgres-data-pipeline
+  address-to-postgres-data-pipeline:
+    image: address-to-postgres-data-pipeline
     build:
-      context: S3ToPostgresDataPipeline/
+      context: AddressesDataPipeline/
       dockerfile: ./Dockerfile
     ports:
       - 3000:3000
@@ -19,11 +19,11 @@ services:
       - database.env
     image: postgres:12
 
-  s3-to-postgres-data-pipeline-test:
-    image: s3-to-postgres-data-pipeline-test
+  address-to-postgres-data-pipeline-test:
+    image: address-to-postgres-data-pipeline-test
     build:
       context: .
-      dockerfile: S3ToPostgresDataPipeline.Tests/Dockerfile
+      dockerfile: AddressesDataPipeline.Tests/Dockerfile
     env_file:
       - database.env
     environment:
@@ -35,6 +35,6 @@ services:
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_DB=s3-to-postgres-data-pipeline-test-db
+      - POSTGRES_DB=address-to-postgres-data-pipeline-test-db
       - POSTGRES_USERNAME=postgres
       - POSTGRES_PASSWORD=password

@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\S3ToPostgresDataPipeline\S3ToPostgresDataPipeline.csproj" />
+    <ProjectReference Include="..\AddressesDataPipeline\AddressesDataPipeline.csproj" />
   </ItemGroup>
 
 </Project>
