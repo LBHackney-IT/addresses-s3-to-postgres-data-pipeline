@@ -6,7 +6,7 @@ using Amazon.S3.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Npgsql;
-using AddressDataPipeline.Database;
+using AddressesDataPipeline.Database;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,7 +17,7 @@ using System.Threading;
 [assembly: LambdaSerializer(
     typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
 
-namespace AddressDataPipeline
+namespace AddressesDataPipeline
 {
     public static class Program
     {

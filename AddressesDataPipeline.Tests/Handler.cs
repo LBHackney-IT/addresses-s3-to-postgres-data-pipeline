@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AddressDataPipeline.Database;
+using AddressesDataPipeline.Database;
 using Amazon.Lambda.Core;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
@@ -11,7 +11,7 @@ using Moq;
 using Npgsql;
 using NUnit.Framework;
 
-namespace AddressDataPipeline.Tests
+namespace AddressesDataPipeline.Tests
 {
     [TestFixture]
     public class HandlerTest : DatabaseTests

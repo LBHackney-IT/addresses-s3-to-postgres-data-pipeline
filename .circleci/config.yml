@@ -54,13 +54,13 @@ commands:
       - run:
           name: Build lambda
           command: |
-            cd ./AddressDataPipeline/
+            cd ./AddressesDataPipeline/
             chmod +x ./build.sh
             ./build.sh
       - run:
           name: Deploy lambda
           command: |
-            cd ./AddressDataPipeline/
+            cd ./AddressesDataPipeline/
             sls deploy --stage <<parameters.stage>> --conceal
 
 jobs:
