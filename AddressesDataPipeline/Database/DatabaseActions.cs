@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace AddressDataPipeline.Database
+namespace AddressesDataPipeline.Database
 {
     public class DatabaseActions : IDatabaseActions
     {
