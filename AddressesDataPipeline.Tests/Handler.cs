@@ -16,37 +16,39 @@ namespace AddressesDataPipeline.Tests
     [TestFixture]
     public class HandlerTest : DatabaseTests
     {
-        //[Test]
-        //public void CanLoadACsvIntoTheDatabase()
-        //{
-        //    var mockDatabaseActions = new Mock<IDatabaseActions>();
-        //    var handler = new Handler(mockDatabaseActions.Object);
-        //    var tableName = "myTable";
+        [Test]
+        public void CanLoadACsvIntoTheDatabase()
+        {
+            var mockDatabaseActions = new Mock<IDatabaseActions>();
+            var handler = new Handler(mockDatabaseActions.Object);
+            var tableName = "myTable";
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", tableName);
 
-        //    var bucketData = new S3EventNotification.S3Entity()
-        //    {
-        //        Bucket = new S3EventNotification.S3BucketEntity() { Name = "testBucket" },
-        //        Object = new S3EventNotification.S3ObjectEntity { Key = "test/key.csv" }
-        //    };
-        //    //S3 record mock
-        //    var testRecord = new S3EventNotification.S3EventNotificationRecord();
-        //    testRecord.AwsRegion = "eu-west-2";
-        //    testRecord.S3 = bucketData;
+            var bucketData = new S3EventNotification.S3Entity
+            {
+                Bucket = new S3EventNotification.S3BucketEntity { Name = "testBucket" },
+                Object = new S3EventNotification.S3ObjectEntity { Key = "test/key.csv" }
+            };
 
-        //    var s3EventMock = new S3EventNotification();
-        //    s3EventMock.Records = new List<S3EventNotification.S3EventNotificationRecord> { testRecord };
+            //S3 record mock
+            var testRecord = new S3EventNotification.S3EventNotificationRecord();
+            testRecord.AwsRegion = "eu-west-2";
+            testRecord.S3 = bucketData;
 
-        //    var contextMock = new Mock<ILambdaContext>();
-        //    //set up Database actions
-        //    mockDatabaseActions.Setup(x => x.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key));
-        //    mockDatabaseActions.Setup(x => x.TruncateTable(contextMock.Object, It.IsAny<string>()));
-        //    mockDatabaseActions.Setup(x => x.SetupDatabase(contextMock.Object)).Returns(() => new NpgsqlConnection());
+            var s3EventMock = new S3EventNotification();
+            s3EventMock.Records = new List<S3EventNotification.S3EventNotificationRecord> { testRecord };
 
-        //    Assert.DoesNotThrow(() => handler.LoadCsv(s3EventMock, contextMock.Object));
-        //    mockDatabaseActions.Verify(y => y.SetupDatabase(contextMock.Object), Times.Once);
-        //    mockDatabaseActions.Verify(y => y.TruncateTable(contextMock.Object, It.IsAny<string>()), Times.Once);
-        //    mockDatabaseActions.Verify(y => y.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key), Times.Once);
-        //}
+            var contextMock = new Mock<ILambdaContext>();
+            //set up Database actions
+            mockDatabaseActions.Setup(x => x.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key));
+            mockDatabaseActions.Setup(x => x.TruncateTable(contextMock.Object, It.IsAny<string>()));
+            mockDatabaseActions.Setup(x => x.SetupDatabase(contextMock.Object)).Returns(() => new NpgsqlConnection());
+
+            Assert.DoesNotThrow(() => handler.LoadCsv(s3EventMock, contextMock.Object));
+            mockDatabaseActions.Verify(y => y.SetupDatabase(contextMock.Object), Times.Once);
+            mockDatabaseActions.Verify(y => y.TruncateTable(contextMock.Object, It.IsAny<string>()), Times.Once);
+            mockDatabaseActions.Verify(y => y.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key), Times.Once);
+        }
     }
 }
 
