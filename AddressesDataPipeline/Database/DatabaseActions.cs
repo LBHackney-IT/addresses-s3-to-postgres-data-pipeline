@@ -107,5 +107,13 @@ namespace AddressesDataPipeline.Database
             return createTableSql;
         }
 
+        public void AddExtension(ILambdaContext context)
+        {
+            LambdaLogger.Log("Add aws_s3 extension to database");
+            var npgsqlCommand = _npgsqlConnection.CreateCommand();
+            var addExtensionQuery = $"CREATE EXTENSION aws_s3 CASCADE;";
+            npgsqlCommand.CommandText = addExtensionQuery;
+            npgsqlCommand.ExecuteNonQuery();
+        }
     }
 }

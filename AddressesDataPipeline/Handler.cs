@@ -50,6 +50,8 @@ namespace AddressesDataPipeline
                     try
                     {
                         string tableName = Environment.GetEnvironmentVariable("DB_TABLE_NAME");
+                        //add aws_s3 extension
+                        _databaseActions.AddExtension(context);
                         //create table 
                         _databaseActions.CreateTable(context, tableName);
                         //truncate correct table
