@@ -11,6 +11,7 @@ namespace AddressesDataPipeline.Database
     {
         int TruncateTable(ILambdaContext context, string tableName);
         int CopyDataToDatabase(string tableName, ILambdaContext context, string awsRegion, string bucketName, string objectKey);
+        void CreateTable(ILambdaContext context, string tableName);
         NpgsqlConnection SetupDatabase(ILambdaContext context);
     }
 }

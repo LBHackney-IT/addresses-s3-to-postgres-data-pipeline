@@ -63,5 +63,48 @@ namespace AddressesDataPipeline.Database
                 throw ex;
             }
         }
+
+        public void CreateTable(ILambdaContext context, string tableName)
+        {
+            LambdaLogger.Log("Create table if it doesn't exist");
+            var npgsqlCommand = _npgsqlConnection.CreateCommand();
+            var createTableQuery = $"CREATE TABLE IF NOT EXISTS {tableName} {GetCreateTableScript()};";
+            npgsqlCommand.CommandText = createTableQuery;
+            npgsqlCommand.ExecuteNonQuery();
+        }
+
+        public string GetCreateTableScript()
+        {
+            var createTableSql = @"(uprn double precision NOT NULL,
+                                        parent_uprn double precision,
+                                        udprn double precision,
+                                        usrn double precision NOT NULL,
+                                        toid character varying(20),
+                                        classification_code character varying(6),
+                                        easting numeric(12, 4),
+                                        northing numeric(12, 4),
+                                        latitude numeric(12, 9),
+                                        longitude numeric(12, 9),
+                                        rpc character varying(10),
+                                        last_update_date date,
+                                        single_line_address character varying(800),
+                                        po_box character varying(18),
+                                        organisation character varying(100),
+                                        sub_building character varying(120),
+                                        building_name character varying(100),
+                                        building_number character varying(17),
+                                        street_name character varying(100),
+                                        locality character varying(100),
+                                        town_name character varying(100),
+                                        post_town character varying(100),
+                                        island character varying(8),
+                                        postcode character varying(8),
+                                        delivery_point_suffix character varying(8),
+                                        gss_code character varying(100),
+                                        change_code character varying(8)
+                                    )";
+            return createTableSql;
+        }
+
     }
 }

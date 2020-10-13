@@ -47,11 +47,20 @@ namespace AddressesDataPipeline.Tests
             CountRows().Should().Be(0);
         }
 
+        [Test]
+        public void CanCreateTable()
+        {
+            _databaseActions.CreateTable(_contextMock.Object, "dbo.test2");
+            TableExists("dbo", "test2").Should().BeTrue();
+        }
+
         [TearDown]
         public void Teardown()
         {
             var npgsqlCommand = _dbConnection.CreateCommand();
             npgsqlCommand.CommandText = @"DROP TABLE IF EXISTS test;";
+            npgsqlCommand.ExecuteNonQuery();
+            npgsqlCommand.CommandText = @"DROP TABLE IF EXISTS test2;";
             npgsqlCommand.ExecuteNonQuery();
         }
 
@@ -63,6 +72,20 @@ namespace AddressesDataPipeline.Tests
             var result = npgsqlCommand.ExecuteScalar();
 
             return Convert.ToInt64(result);
+        }
+
+        private bool TableExists(string schema, string table)
+        {
+            var npgsqlCommand = _dbConnection.CreateCommand();
+            npgsqlCommand.CommandText = $@"SELECT EXISTS(SELECT FROM pg_catalog.pg_class c
+                                       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                                       WHERE n.nspname = '{schema}'
+                                       AND c.relname = '{table}'
+                                       );";
+
+            var result = npgsqlCommand.ExecuteScalar();
+
+            return Convert.ToBoolean(result);
         }
 
         //TODO test for inserting data into Postgres

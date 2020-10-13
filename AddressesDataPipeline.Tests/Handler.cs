@@ -41,12 +41,14 @@ namespace AddressesDataPipeline.Tests
             var contextMock = new Mock<ILambdaContext>();
             //set up Database actions
             mockDatabaseActions.Setup(x => x.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key));
+            mockDatabaseActions.Setup(x => x.CreateTable(contextMock.Object, It.IsAny<string>()));
             mockDatabaseActions.Setup(x => x.TruncateTable(contextMock.Object, It.IsAny<string>()));
             mockDatabaseActions.Setup(x => x.SetupDatabase(contextMock.Object)).Returns(() => new NpgsqlConnection());
 
             Assert.DoesNotThrow(() => handler.LoadCsv(s3EventMock, contextMock.Object));
             mockDatabaseActions.Verify(y => y.SetupDatabase(contextMock.Object), Times.Once);
             mockDatabaseActions.Verify(y => y.TruncateTable(contextMock.Object, It.IsAny<string>()), Times.Once);
+            mockDatabaseActions.Verify(y => y.CreateTable(contextMock.Object, It.IsAny<string>()), Times.Once);
             mockDatabaseActions.Verify(y => y.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key), Times.Once);
         }
     }
