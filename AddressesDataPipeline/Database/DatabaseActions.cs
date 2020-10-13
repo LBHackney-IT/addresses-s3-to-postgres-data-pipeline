@@ -15,11 +15,12 @@ namespace AddressesDataPipeline.Database
         {
             var loadDataCommand = _npgsqlConnection.CreateCommand();
 
-            var loadDataFromCSV = @"SELECT aws_s3.table_import_from_s3(@tableName,'','(FORMAT csv, HEADER)',@bucket, @objectkey, @awsregion);";
+            var loadDataFromCSV = @"SELECT aws_s3.table_import_from_s3(@tablename,'','(FORMAT csv, HEADER)',@bucket, @objectkey, @awsregion);";
             loadDataCommand.CommandText = loadDataFromCSV;
             loadDataCommand.Parameters.AddWithValue("bucket", bucketName);
             loadDataCommand.Parameters.AddWithValue("objectkey", objectKey);
             loadDataCommand.Parameters.AddWithValue("awsregion", awsRegion);
+            loadDataCommand.Parameters.AddWithValue("tablename", tableName);
             var rowsAffected = loadDataCommand.ExecuteNonQuery();
             if (rowsAffected == 0)
             {
