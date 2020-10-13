@@ -14,7 +14,7 @@ namespace AddressesDataPipeline.Database
         public int CopyDataToDatabase(string tableName, ILambdaContext context, string awsRegion, string bucketName, string objectKey)
         {
             var loadDataCommand = _npgsqlConnection.CreateCommand();
-
+            LambdaLogger.Log($"Copying data to table ({tableName}) from region ({awsRegion}) and bucket ({bucketName}) and file ({objectKey})");
             var loadDataFromCSV = @"SELECT aws_s3.table_import_from_s3(@tablename,'','(FORMAT csv, HEADER)',@bucket, @objectkey, @awsregion);";
             loadDataCommand.CommandText = loadDataFromCSV;
             loadDataCommand.Parameters.AddWithValue("bucket", bucketName);
@@ -111,7 +111,7 @@ namespace AddressesDataPipeline.Database
         {
             LambdaLogger.Log("Add aws_s3 extension to database");
             var npgsqlCommand = _npgsqlConnection.CreateCommand();
-            var addExtensionQuery = $"CREATE EXTENSION aws_s3 CASCADE;";
+            var addExtensionQuery = $"CREATE EXTENSION IF NOT EXISTS aws_s3 CASCADE;";
             npgsqlCommand.CommandText = addExtensionQuery;
             npgsqlCommand.ExecuteNonQuery();
         }
