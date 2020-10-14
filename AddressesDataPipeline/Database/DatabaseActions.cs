@@ -48,7 +48,7 @@ namespace AddressesDataPipeline.Database
               "VALUES ";
 
             var values = string.Join(", ", records.Select(x =>
-                $"('{NumericalIdToUniqueString(x.id)}' ,{x.uprn}, {x.usrn}, {x.parent_uprn}, 'Approved Preferred', '{x.sub_building}'," +
+                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {x.parent_uprn}, 'Approved Preferred', '{x.sub_building}'," +
                 $" '{x.building_name}', '{x.building_number}', '{x.street_name}', '{x.postcode}', '{x.postcode.Replace(" ", "")}', " +
                 $" '{x.locality}', '{gazetteer}', " +
                 $"'{x.organisation}', '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
@@ -169,14 +169,6 @@ namespace AddressesDataPipeline.Database
             }
 
             return string.Join(", ", addressLines);
-        }
-
-        private static string NumericalIdToUniqueString(long id)
-        {
-            var numberLength = id.ToString().Length;
-            var zeros = "0000000000000";
-            var concatted = zeros + id;
-            return concatted.Substring(numberLength - 1, 14);
         }
 
         private static string GetUsageDescription(string code)
