@@ -29,7 +29,7 @@ namespace AddressesDataPipeline.Database
         [MaxLength(100)] public string town_name { get; set; }
         [MaxLength(100)] public string post_town { get; set; }
         [MaxLength(8)] public string island { get; set; }
-        [MaxLength(8)] public string  postcode { get; set; }
+        [MaxLength(8)] public string postcode { get; set; }
         [MaxLength(8)] public string delivery_point_suffix { get; set; }
         [MaxLength(100)] public string gss_code { get; set; }
         [MaxLength(8)] public string change_code { get; set; }

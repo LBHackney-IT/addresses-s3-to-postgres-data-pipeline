@@ -92,7 +92,7 @@ namespace AddressesDataPipeline.Tests
             InsertRecordIntoAddressBase(hackneyAddress);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest{gazetteer = "national"}, new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { gazetteer = "national" }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.national_address");
 
@@ -119,16 +119,16 @@ namespace AddressesDataPipeline.Tests
             addressBaseRecord.ForEach(InsertRecordIntoAddressBase);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest{ limit = 2 }, new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { limit = 2 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
 
             var expectedNationalAddresses = addressBaseRecord.Take(2).Select(MapToExpectedAddressRecord).ToList();
             results.Count.Should().Be(2);
-            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(),options => options.Excluding(x => x.lpi_key));
+            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
             results.First().lpi_key.Should().Be("00000000000001");
 
-            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(),options => options.Excluding(x => x.lpi_key));
+            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
             results.Last().lpi_key.Should().Be("00000000000002");
         }
 
@@ -146,16 +146,16 @@ namespace AddressesDataPipeline.Tests
             addressBaseRecord.ForEach(InsertRecordIntoAddressBase);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest{ cursor = "00000000000001", limit = 2 }, new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { cursor = "00000000000001", limit = 2 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
 
             var expectedNationalAddresses = addressBaseRecord.Skip(1).Take(2).Select(MapToExpectedAddressRecord).ToList();
             results.Count.Should().Be(2);
-            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(),options => options.Excluding(x => x.lpi_key));
+            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
             results.First().lpi_key.Should().Be("00000000000002");
 
-            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(),options => options.Excluding(x => x.lpi_key));
+            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
             results.Last().lpi_key.Should().Be("00000000000003");
         }
 
@@ -207,12 +207,12 @@ namespace AddressesDataPipeline.Tests
                 line4 = addressLines.Length > 3 ? addressLines.ElementAt(3) : null,
                 locality = addressBaseRecord.locality,
                 longitude = addressBaseRecord.longitude,
-                lpi_logical_status =  "Approved Preferred",
+                lpi_logical_status = "Approved Preferred",
                 neverexport = false,
                 northing = addressBaseRecord.northing,
                 organisation = addressBaseRecord.organisation,
                 pao_text = addressBaseRecord.building_name,
-                parent_uprn = (long?) addressBaseRecord.parent_uprn,
+                parent_uprn = (long?)addressBaseRecord.parent_uprn,
                 planning_use_class = "",
                 postcode = addressBaseRecord.postcode,
                 postcode_nospace = addressBaseRecord.postcode.Replace(" ", ""),
@@ -220,10 +220,10 @@ namespace AddressesDataPipeline.Tests
                 sao_text = addressBaseRecord.sub_building,
                 street_description = addressBaseRecord.street_name,
                 town = addressBaseRecord.town_name,
-                uprn = (long) addressBaseRecord.uprn,
+                uprn = (long)addressBaseRecord.uprn,
                 usage_description = usage,
                 usage_primary = usage,
-                usrn = (int) addressBaseRecord.usrn,
+                usrn = (int)addressBaseRecord.usrn,
                 ward = "",
             };
             return expectedNationalAddress;

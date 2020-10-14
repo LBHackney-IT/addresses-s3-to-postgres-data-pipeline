@@ -156,13 +156,13 @@ namespace AddressesDataPipeline.Database
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
                 $" ORDER BY id {limitExpression} OFFSET @Cursor;";
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
-                selectText, new {Limit = limit, Cursor = numericCursor});
+                selectText, new { Limit = limit, Cursor = numericCursor });
             return records;
         }
 
         private static string GetAddressLines(string address)
         {
-            var addressLines = address.Split(',').Select(line => string.IsNullOrWhiteSpace(line) ? "NULL" : $"'{line}'" ).ToList();
+            var addressLines = address.Split(',').Select(line => string.IsNullOrWhiteSpace(line) ? "NULL" : $"'{line}'").ToList();
             while (addressLines.Count < 4)
             {
                 addressLines.Add("NULL");
