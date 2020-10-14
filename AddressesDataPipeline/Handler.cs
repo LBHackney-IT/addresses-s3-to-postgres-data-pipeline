@@ -86,7 +86,7 @@ namespace AddressesDataPipeline
             {
                 var tableName = Environment.GetEnvironmentVariable("DB_TABLE_NAME");
                 //truncate correct table
-                // load csv data into table
+                // load csv data into national and/or hackney tables
                 _databaseActions.TransformDataAndInsert(tableName, request.cursor, request.limit, request.gazetteer);
                 _databaseActions.TruncateTable(context, tableName);
             }
