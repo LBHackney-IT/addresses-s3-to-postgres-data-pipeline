@@ -148,12 +148,13 @@ namespace AddressesDataPipeline.Database
                 ? $"gss_code = '{_hackneyGssCode}'"
                 : $"gss_code != '{_hackneyGssCode}'";
             var numericCursor = Convert.ToInt64(cursor);
+            var limitExpression = limit == null ? "" : "LIMIT @Limit";
 
             var selectText =
                 "SELECT uprn,usrn,parent_uprn,sub_building,building_name,building_number,street_name,postcode,locality,gss_code," +
                 "organisation,classification_code,easting,northing,longitude,latitude,single_line_address,town_name, " +
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
-                " ORDER BY id LIMIT @Limit OFFSET @Cursor;";
+                $" ORDER BY id {limitExpression} OFFSET @Cursor;";
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new {Limit = limit, Cursor = numericCursor});
             return records;
