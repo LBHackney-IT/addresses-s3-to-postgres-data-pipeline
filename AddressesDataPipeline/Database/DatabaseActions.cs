@@ -54,6 +54,9 @@ namespace AddressesDataPipeline.Database
                 $"'{x.organisation}', '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
                 $"'{x.classification_code.Trim().Substring(0, 4)}', '',{x.classification_code.First() == 'P'}, false, {x.easting}, {x.northing}, " +
                 $"{x.longitude}, {x.latitude}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, '{x.town_name}')"));
+            Console.WriteLine($"Inserting records into {databaseToInsertInto}");
+            Console.WriteLine("SQL string:");
+            Console.Write(insertStatement + values);
             return _npgsqlConnection.Execute(insertStatement + values);
         }
 
@@ -78,10 +81,13 @@ namespace AddressesDataPipeline.Database
                 $"Database={Environment.GetEnvironmentVariable("DB_DATABASE") ?? "address-to-postgres-data-pipeline-test-db"}" + ";CommandTimeout=120;";
             try
             {
+                LambdaLogger.Log("Connection string: ");
+                LambdaLogger.Log(connString);
                 var connection = new NpgsqlConnection(connString);
                 LambdaLogger.Log("Opening DB connection");
                 connection.Open();
                 _npgsqlConnection = connection;
+                LambdaLogger.Log("DB connection opened!");
                 return connection;
             }
             catch (Exception ex)
@@ -155,6 +161,9 @@ namespace AddressesDataPipeline.Database
                 "organisation,classification_code,easting,northing,longitude,latitude,single_line_address,town_name, " +
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
                 $" ORDER BY id {limitExpression} OFFSET @Cursor;";
+            Console.WriteLine($"Getting {limit} records from address base");
+            Console.WriteLine("SQL string:");
+            Console.Write(selectText);
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new { Limit = limit, Cursor = numericCursor });
             return records;
