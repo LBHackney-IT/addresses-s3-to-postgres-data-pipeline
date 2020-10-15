@@ -48,20 +48,31 @@ namespace AddressesDataPipeline.Database
               "VALUES ";
 
             var values = string.Join(", ", records.Select(x =>
-                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {x.parent_uprn}, 'Approved Preferred', '{x.sub_building}'," +
-                $" '{x.building_name}', '{x.building_number}', '{x.street_name}', '{x.postcode}', '{x.postcode.Replace(" ", "")}', " +
-                $" '{x.locality}', '{gazetteer}', " +
-                $"'{x.organisation}', '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
-                $"'{TrimCode(x.classification_code)}', '',{x.classification_code.First() == 'P'}, false, {x.easting}, {x.northing}, " +
-                $"{x.longitude}, {x.latitude}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, '{x.town_name}')"));
+                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {CheckNumberForNullValue(x.parent_uprn)}, 'Approved Preferred', {CheckStringForNullValue(x.sub_building)}," +
+                $" {CheckStringForNullValue(x.building_name)}, {CheckStringForNullValue(x.building_number)}, {CheckStringForNullValue(x.street_name)}, {CheckStringForNullValue(x.postcode)}, {CheckStringForNullValue(x.postcode?.Replace(" ", ""))}, " +
+                $" '{x.locality ?? "NULL"}', '{gazetteer}', " +
+                $"{CheckStringForNullValue(x.organisation)}, '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
+                $"'{TrimCode(x.classification_code)}', '',{x.classification_code?.First() == 'P'}, false, {CheckNumberForNullValue(x.easting)}, {CheckNumberForNullValue(x.northing)}, " +
+                $"{CheckNumberForNullValue(x.longitude)}, {CheckNumberForNullValue(x.latitude)}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, {CheckStringForNullValue(x.town_name)})"));
             Console.WriteLine($"Inserting records into {databaseToInsertInto}");
             Console.WriteLine("SQL string:");
             Console.Write(insertStatement + values);
             return _npgsqlConnection.Execute(insertStatement + values);
         }
 
+        private static string CheckNumberForNullValue(double? value)
+        {
+            return value == null ? "NULL" : value.ToString();
+        }
+
+        private static string CheckStringForNullValue(string value)
+        {
+            return value == null ? "NULL" : $"'{value}'";
+        }
+
         private static string TrimCode(string code)
         {
+            if (code == null) return "NULL";
             return code.Trim().Length > 4
                 ? code.Trim().Substring(0, 4)
                 : code.Trim();
