@@ -52,12 +52,19 @@ namespace AddressesDataPipeline.Database
                 $" '{x.building_name}', '{x.building_number}', '{x.street_name}', '{x.postcode}', '{x.postcode.Replace(" ", "")}', " +
                 $" '{x.locality}', '{gazetteer}', " +
                 $"'{x.organisation}', '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
-                $"'{x.classification_code.Trim().Substring(0, 4)}', '',{x.classification_code.First() == 'P'}, false, {x.easting}, {x.northing}, " +
+                $"'{TrimCode(x.classification_code)}', '',{x.classification_code.First() == 'P'}, false, {x.easting}, {x.northing}, " +
                 $"{x.longitude}, {x.latitude}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, '{x.town_name}')"));
             Console.WriteLine($"Inserting records into {databaseToInsertInto}");
             Console.WriteLine("SQL string:");
             Console.Write(insertStatement + values);
             return _npgsqlConnection.Execute(insertStatement + values);
+        }
+
+        private static string TrimCode(string code)
+        {
+            return code.Trim().Length > 4
+                ? code.Trim().Substring(0, 4)
+                : code.Trim();
         }
 
         public int TruncateTable(ILambdaContext context, string tableName)
