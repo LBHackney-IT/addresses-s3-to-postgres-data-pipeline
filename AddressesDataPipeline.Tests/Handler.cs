@@ -160,13 +160,15 @@ namespace AddressesDataPipeline.Tests
         }
 
         [Test]
-        public void SavesNullDataAsNullInTheDatabase()
+        public void CorrectlyFormatsStringDataToInsertIntoTheDatabase()
         {
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
 
             var hackneyAddress = CreateRandomAddressBaseRecord("local");
             hackneyAddress.parent_uprn = null;
             hackneyAddress.building_name = null;
+            hackneyAddress.town_name = "St. Jude's";
+            hackneyAddress.single_line_address = "Flat 1, St. thomas's street, London, Postcode ";
             InsertRecordIntoAddressBase(hackneyAddress);
 
             var handler = new Handler();
@@ -174,11 +176,13 @@ namespace AddressesDataPipeline.Tests
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
 
-            var expectedAddress = MapToExpectedAddressRecord(hackneyAddress);
             results.Count.Should().Be(1);
             results.First().lpi_key.Should().Be("00000000000001");
             results.First().parent_uprn.Should().BeNull();
             results.First().pao_text.Should().BeNull();
+            results.First().town.Should().Be("St. Jude's");
+            results.First().line2.Should().Be(" St. thomas's street");
+            results.First().line4.Should().BeNull();
         }
 
         private void InsertRecordIntoAddressBase(CsvUploadRecord addressBaseRecord)

@@ -67,7 +67,7 @@ namespace AddressesDataPipeline.Database
 
         private static string CheckStringForNullValue(string value)
         {
-            return value == null ? "NULL" : $"'{value}'";
+            return value == null ? "NULL" : $"'{value.Replace("'", "''")}'";
         }
 
         private static string TrimCode(string code)
@@ -99,8 +99,6 @@ namespace AddressesDataPipeline.Database
                 $"Database={Environment.GetEnvironmentVariable("DB_DATABASE") ?? "address-to-postgres-data-pipeline-test-db"}" + ";CommandTimeout=120;";
             try
             {
-                LambdaLogger.Log("Connection string: ");
-                LambdaLogger.Log(connString);
                 var connection = new NpgsqlConnection(connString);
                 LambdaLogger.Log("Opening DB connection");
                 connection.Open();
@@ -191,7 +189,7 @@ namespace AddressesDataPipeline.Database
         {
             var addressLines = address.Split(',')
                 .Where(line => !string.IsNullOrWhiteSpace(line))
-                .Select(line => $"'{line}'")
+                .Select(line => $"'{line.Replace("'", "''")}'")
                 .ToList();
             addressLines.RemoveAt(addressLines.Count - 1);
             while (addressLines.Count < 4)
