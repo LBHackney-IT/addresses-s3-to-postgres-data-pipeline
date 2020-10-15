@@ -5,8 +5,6 @@ provider:
   runtime: dotnetcore3.1
   vpc: ${self:custom.vpc.${opt:stage}}
   stage: ${opt:stage}
-  package:
-    artifact: bin/release/netcoreapp3.1/AddressesDataPipeline.zip
   environment:
     DB_HOST: ${ssm:/addresses-api/${self:provider.stage}/postgres-hostname}
     DB_PORT: ${ssm:/addresses-api/${self:provider.stage}/postgres-port}
@@ -16,6 +14,7 @@ provider:
     DB_TABLE_NAME: ${ssm:/addresses-api/${self:provider.stage}/postgres-table}
 
 package:
+  artifact: bin/release/netcoreapp3.1/AddressesDataPipeline.zip
   individually: true
 
 functions:
