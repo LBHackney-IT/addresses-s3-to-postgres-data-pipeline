@@ -88,7 +88,6 @@ namespace AddressesDataPipeline
                 //truncate correct table
                 // load csv data into national and/or hackney tables
                 _databaseActions.TransformDataAndInsert(tableName, request.cursor, request.limit, request.gazetteer);
-                _databaseActions.TruncateTable(context, tableName);
             }
             catch (NpgsqlException ex)
             {
