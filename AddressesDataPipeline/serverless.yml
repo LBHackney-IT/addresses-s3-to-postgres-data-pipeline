@@ -30,6 +30,7 @@ functions:
           existing: true
   transform-and-insert-data:
     handler: AddressesDataPipeline::AddressesDataPipeline.Handler::TransformData
+    timeout: 120
     role: dataPipelineLambdaExecutionRole
 
 resources:
