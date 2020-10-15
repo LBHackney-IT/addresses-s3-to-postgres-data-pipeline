@@ -58,7 +58,7 @@ namespace AddressesDataPipeline.Tests
         }
 
         [Test]
-        public void CanTransformDataAndSaveIntoHackneyAddresses()
+        public void TransformsDataAndSaveIntoHackneyAddresses()
         {
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
 
@@ -82,7 +82,7 @@ namespace AddressesDataPipeline.Tests
         }
 
         [Test]
-        public void CanTransformDataAndSaveIntoNationalAddresses()
+        public void TransformsDataAndSavesIntoNationalAddresses()
         {
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
 
@@ -106,7 +106,7 @@ namespace AddressesDataPipeline.Tests
         }
 
         [Test]
-        public void CanTransformFirstBatchOfDataAndSaveIntoHackneyAddresses()
+        public void TransformsFirstBatchOfDataAndSaveIntoHackneyAddresses()
         {
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
 
@@ -133,7 +133,7 @@ namespace AddressesDataPipeline.Tests
         }
 
         [Test]
-        public void CanTransformSecondBatchOfDataAndSaveIntoNationalAddresses()
+        public void TransformsSecondBatchOfDataAndSaveIntoNationalAddresses()
         {
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
 
@@ -159,6 +159,32 @@ namespace AddressesDataPipeline.Tests
             results.Last().lpi_key.Should().Be("00000000000003");
         }
 
+        [Test]
+        public void CorrectlyFormatsStringDataToInsertIntoTheDatabase()
+        {
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
+
+            var hackneyAddress = CreateRandomAddressBaseRecord("local");
+            hackneyAddress.parent_uprn = null;
+            hackneyAddress.building_name = null;
+            hackneyAddress.town_name = "St. Jude's";
+            hackneyAddress.single_line_address = "Flat 1, St. thomas's street, London, Postcode ";
+            InsertRecordIntoAddressBase(hackneyAddress);
+
+            var handler = new Handler();
+            handler.TransformData(new Handler.TransformDataRequest(), new Mock<ILambdaContext>().Object);
+
+            var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
+
+            results.Count.Should().Be(1);
+            results.First().lpi_key.Should().Be("00000000000001");
+            results.First().parent_uprn.Should().BeNull();
+            results.First().pao_text.Should().BeNull();
+            results.First().town.Should().Be("St. Jude's");
+            results.First().line2.Should().Be(" St. thomas's street");
+            results.First().line4.Should().BeNull();
+        }
+
         private void InsertRecordIntoAddressBase(CsvUploadRecord addressBaseRecord)
         {
             DbConnection.Execute(
@@ -169,9 +195,11 @@ namespace AddressesDataPipeline.Tests
 
         private CsvUploadRecord CreateRandomAddressBaseRecord(string gazetteer)
         {
+            var singleAddressLine = string.Join(',', _fixture.CreateMany<string>(4));
             var gss_code = gazetteer == "local" ? _hackneyGssCode : "E06281728";
             return _fixture.Build<CsvUploadRecord>()
                 .With(c => c.gss_code, gss_code)
+                .With(a => a.single_line_address, singleAddressLine)
                 .Create();
         }
 
@@ -204,7 +232,7 @@ namespace AddressesDataPipeline.Tests
                 line1 = addressLines.ElementAt(0),
                 line2 = addressLines.Length > 1 ? addressLines.ElementAt(1) : null,
                 line3 = addressLines.Length > 2 ? addressLines.ElementAt(2) : null,
-                line4 = addressLines.Length > 3 ? addressLines.ElementAt(3) : null,
+                line4 = null,
                 locality = addressBaseRecord.locality,
                 longitude = addressBaseRecord.longitude,
                 lpi_logical_status = "Approved Preferred",

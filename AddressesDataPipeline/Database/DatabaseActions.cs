@@ -48,13 +48,34 @@ namespace AddressesDataPipeline.Database
               "VALUES ";
 
             var values = string.Join(", ", records.Select(x =>
-                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {x.parent_uprn}, 'Approved Preferred', '{x.sub_building}'," +
-                $" '{x.building_name}', '{x.building_number}', '{x.street_name}', '{x.postcode}', '{x.postcode.Replace(" ", "")}', " +
-                $" '{x.locality}', '{gazetteer}', " +
-                $"'{x.organisation}', '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
-                $"'{x.classification_code.Trim().Substring(0, 4)}', '',{x.classification_code.First() == 'P'}, false, {x.easting}, {x.northing}, " +
-                $"{x.longitude}, {x.latitude}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, '{x.town_name}')"));
+                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {CheckNumberForNullValue(x.parent_uprn)}, 'Approved Preferred', {CheckStringForNullValue(x.sub_building)}," +
+                $" {CheckStringForNullValue(x.building_name)}, {CheckStringForNullValue(x.building_number)}, {CheckStringForNullValue(x.street_name)}, {CheckStringForNullValue(x.postcode)}, {CheckStringForNullValue(x.postcode?.Replace(" ", ""))}, " +
+                $" '{x.locality ?? "NULL"}', '{gazetteer}', " +
+                $"{CheckStringForNullValue(x.organisation)}, '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
+                $"'{TrimCode(x.classification_code)}', '',{x.classification_code?.First() == 'P'}, false, {CheckNumberForNullValue(x.easting)}, {CheckNumberForNullValue(x.northing)}, " +
+                $"{CheckNumberForNullValue(x.longitude)}, {CheckNumberForNullValue(x.latitude)}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, {CheckStringForNullValue(x.town_name)})"));
+            Console.WriteLine($"Inserting records into {databaseToInsertInto}");
+            Console.WriteLine("SQL string:");
+            Console.Write(insertStatement + values);
             return _npgsqlConnection.Execute(insertStatement + values);
+        }
+
+        private static string CheckNumberForNullValue(double? value)
+        {
+            return value == null ? "NULL" : value.ToString();
+        }
+
+        private static string CheckStringForNullValue(string value)
+        {
+            return value == null ? "NULL" : $"'{value.Replace("'", "''")}'";
+        }
+
+        private static string TrimCode(string code)
+        {
+            if (code == null) return "NULL";
+            return code.Trim().Length > 4
+                ? code.Trim().Substring(0, 4)
+                : code.Trim();
         }
 
         public int TruncateTable(ILambdaContext context, string tableName)
@@ -82,6 +103,7 @@ namespace AddressesDataPipeline.Database
                 LambdaLogger.Log("Opening DB connection");
                 connection.Open();
                 _npgsqlConnection = connection;
+                LambdaLogger.Log("DB connection opened!");
                 return connection;
             }
             catch (Exception ex)
@@ -155,6 +177,9 @@ namespace AddressesDataPipeline.Database
                 "organisation,classification_code,easting,northing,longitude,latitude,single_line_address,town_name, " +
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
                 $" ORDER BY id {limitExpression} OFFSET @Cursor;";
+            Console.WriteLine($"Getting {limit} records from address base");
+            Console.WriteLine("SQL string:");
+            Console.Write(selectText);
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new { Limit = limit, Cursor = numericCursor });
             return records;
@@ -162,11 +187,17 @@ namespace AddressesDataPipeline.Database
 
         private static string GetAddressLines(string address)
         {
-            var addressLines = address.Split(',').Select(line => string.IsNullOrWhiteSpace(line) ? "NULL" : $"'{line}'").ToList();
+            var addressLines = address.Split(',')
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => $"'{line.Replace("'", "''")}'")
+                .ToList();
+            addressLines.RemoveAt(addressLines.Count - 1);
             while (addressLines.Count < 4)
             {
                 addressLines.Add("NULL");
             }
+
+            if (addressLines.Count > 4) addressLines = addressLines.Take(4).ToList();
 
             return string.Join(", ", addressLines);
         }

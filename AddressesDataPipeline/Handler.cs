@@ -55,7 +55,7 @@ namespace AddressesDataPipeline
                         string tableName = Environment.GetEnvironmentVariable("DB_TABLE_NAME");
                         //add aws_s3 extension
                         _databaseActions.AddExtension(context);
-                        //create table 
+                        //create table
                         _databaseActions.CreateTable(context, tableName);
                         //truncate correct table
                         _databaseActions.TruncateTable(context, tableName);
@@ -88,7 +88,6 @@ namespace AddressesDataPipeline
                 //truncate correct table
                 // load csv data into national and/or hackney tables
                 _databaseActions.TransformDataAndInsert(tableName, request.cursor, request.limit, request.gazetteer);
-                _databaseActions.TruncateTable(context, tableName);
             }
             catch (NpgsqlException ex)
             {
