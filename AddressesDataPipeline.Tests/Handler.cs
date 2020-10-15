@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using AddressesDataPipeline.Database;
 using Amazon.Lambda.Core;
-using Amazon.S3.Model;
 using Amazon.S3.Util;
+using AutoFixture;
+using Dapper;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Moq;
 using Npgsql;
 using NUnit.Framework;
@@ -16,13 +16,16 @@ namespace AddressesDataPipeline.Tests
     [TestFixture]
     public class HandlerTest : DatabaseTests
     {
+        private IFixture _fixture = new Fixture();
+        private const string _hackneyGssCode = "E09000012";
         [Test]
         public void CanLoadACsvIntoTheDatabase()
         {
             var mockDatabaseActions = new Mock<IDatabaseActions>();
             var handler = new Handler(mockDatabaseActions.Object);
-            var tableName = "myTable";
+            var tableName = "test";
             Environment.SetEnvironmentVariable("DB_TABLE_NAME", tableName);
+            CreateTable("test");
 
             var bucketData = new S3EventNotification.S3Entity
             {
@@ -53,39 +56,184 @@ namespace AddressesDataPipeline.Tests
             mockDatabaseActions.Verify(y => y.CreateTable(contextMock.Object, It.IsAny<string>()), Times.Once);
             mockDatabaseActions.Verify(y => y.CopyDataToDatabase(tableName, contextMock.Object, testRecord.AwsRegion, bucketData.Bucket.Name, bucketData.Object.Key), Times.Once);
         }
+
+        [Test]
+        public void CanTransformDataAndSaveIntoHackneyAddresses()
+        {
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
+
+            var nationalAddress = CreateRandomAddressBaseRecord("national");
+            var hackneyAddress = CreateRandomAddressBaseRecord("local");
+            InsertRecordIntoAddressBase(nationalAddress);
+            InsertRecordIntoAddressBase(hackneyAddress);
+
+            var handler = new Handler();
+            handler.TransformData(new Handler.TransformDataRequest(), new Mock<ILambdaContext>().Object);
+
+            var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address");
+
+            var expectedNationalAddress = MapToExpectedAddressRecord(hackneyAddress);
+            results.Count().Should().Be(1);
+            results.First().lpi_key.Should().Be("00000000000001");
+            results.First().Should().BeEquivalentTo(expectedNationalAddress, options =>
+                options.Excluding(x => x.lpi_key).Excluding(x => x.blpu_end_date).Excluding(x => x.blpu_start_date)
+                    .Excluding(x => x.blpu_last_update_date).Excluding(x => x.lpi_end_date).Excluding(x => x.lpi_start_date)
+                    .Excluding(x => x.lpi_last_update_date));
+        }
+
+        [Test]
+        public void CanTransformDataAndSaveIntoNationalAddresses()
+        {
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
+
+            var nationalAddress = CreateRandomAddressBaseRecord("national");
+            var hackneyAddress = CreateRandomAddressBaseRecord("local");
+            InsertRecordIntoAddressBase(nationalAddress);
+            InsertRecordIntoAddressBase(hackneyAddress);
+
+            var handler = new Handler();
+            handler.TransformData(new Handler.TransformDataRequest { gazetteer = "national" }, new Mock<ILambdaContext>().Object);
+
+            var results = DbConnection.Query<Address>("SELECT * FROM dbo.national_address");
+
+            var expectedNationalAddress = MapToExpectedAddressRecord(nationalAddress);
+            results.Count().Should().Be(1);
+            results.First().lpi_key.Should().Be("00000000000001");
+            results.First().Should().BeEquivalentTo(expectedNationalAddress, options =>
+                options.Excluding(x => x.lpi_key).Excluding(x => x.blpu_end_date).Excluding(x => x.blpu_start_date)
+                    .Excluding(x => x.blpu_last_update_date).Excluding(x => x.lpi_end_date).Excluding(x => x.lpi_start_date)
+                    .Excluding(x => x.lpi_last_update_date));
+        }
+
+        [Test]
+        public void CanTransformFirstBatchOfDataAndSaveIntoHackneyAddresses()
+        {
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
+
+            var addressBaseRecord = new List<CsvUploadRecord>
+            {
+                CreateRandomAddressBaseRecord("local"),
+                CreateRandomAddressBaseRecord("local"),
+                CreateRandomAddressBaseRecord("local")
+            };
+            addressBaseRecord.ForEach(InsertRecordIntoAddressBase);
+
+            var handler = new Handler();
+            handler.TransformData(new Handler.TransformDataRequest { limit = 2 }, new Mock<ILambdaContext>().Object);
+
+            var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
+
+            var expectedNationalAddresses = addressBaseRecord.Take(2).Select(MapToExpectedAddressRecord).ToList();
+            results.Count.Should().Be(2);
+            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
+            results.First().lpi_key.Should().Be("00000000000001");
+
+            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
+            results.Last().lpi_key.Should().Be("00000000000002");
+        }
+
+        [Test]
+        public void CanTransformSecondBatchOfDataAndSaveIntoNationalAddresses()
+        {
+            Environment.SetEnvironmentVariable("DB_TABLE_NAME", "dbo.address_base");
+
+            var addressBaseRecord = new List<CsvUploadRecord>
+            {
+                CreateRandomAddressBaseRecord("local"),
+                CreateRandomAddressBaseRecord("local"),
+                CreateRandomAddressBaseRecord("local")
+            };
+            addressBaseRecord.ForEach(InsertRecordIntoAddressBase);
+
+            var handler = new Handler();
+            handler.TransformData(new Handler.TransformDataRequest { cursor = "00000000000001", limit = 2 }, new Mock<ILambdaContext>().Object);
+
+            var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
+
+            var expectedNationalAddresses = addressBaseRecord.Skip(1).Take(2).Select(MapToExpectedAddressRecord).ToList();
+            results.Count.Should().Be(2);
+            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
+            results.First().lpi_key.Should().Be("00000000000002");
+
+            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
+            results.Last().lpi_key.Should().Be("00000000000003");
+        }
+
+        private void InsertRecordIntoAddressBase(CsvUploadRecord addressBaseRecord)
+        {
+            DbConnection.Execute(
+                "INSERT INTO dbo.address_base (uprn,parent_uprn,udprn,usrn,toid,classification_code,easting,northing,latitude,longitude,rpc,last_update_date,single_line_address,po_box,organisation,sub_building,building_name,building_number,street_name,locality,town_name,post_town,change_code,island,postcode,delivery_point_suffix,gss_code)" +
+                "VALUES (@uprn,@parent_uprn,@udprn,@usrn,@toid,@classification_code,@easting,@northing,@latitude,@longitude,@rpc,@last_update_date,@single_line_address,@po_box,@organisation,@sub_building,@building_name,@building_number,@street_name,@locality,@town_name,@post_town,@change_code,@island,@postcode,@delivery_point_suffix,@gss_code)",
+                addressBaseRecord);
+        }
+
+        private CsvUploadRecord CreateRandomAddressBaseRecord(string gazetteer)
+        {
+            var gss_code = gazetteer == "local" ? _hackneyGssCode : "E06281728";
+            return _fixture.Build<CsvUploadRecord>()
+                .With(c => c.gss_code, gss_code)
+                .Create();
+        }
+
+        private static Address MapToExpectedAddressRecord(CsvUploadRecord addressBaseRecord)
+        {
+            var usage = addressBaseRecord.classification_code.First() switch
+            {
+                'R' => "Residential",
+                'C' => "commercial",
+                'P' => "Parent Shell",
+                'L' => "Land",
+                'X' => "Dual Use",
+                _ => "Unclassified"
+            };
+            var addressLines = addressBaseRecord.single_line_address.Split(',');
+
+            var expectedNationalAddress = new Address
+            {
+                blpu_end_date = 0,
+                blpu_last_update_date = 0,
+                blpu_start_date = 0,
+                lpi_start_date = 0,
+                lpi_end_date = 0,
+                lpi_last_update_date = 0,
+                blpu_class = addressBaseRecord.classification_code.Substring(0, 4),
+                building_number = addressBaseRecord.building_number,
+                easting = addressBaseRecord.easting,
+                gazetteer = addressBaseRecord.gss_code == _hackneyGssCode ? "local" : "national",
+                latitude = addressBaseRecord.latitude,
+                line1 = addressLines.ElementAt(0),
+                line2 = addressLines.Length > 1 ? addressLines.ElementAt(1) : null,
+                line3 = addressLines.Length > 2 ? addressLines.ElementAt(2) : null,
+                line4 = addressLines.Length > 3 ? addressLines.ElementAt(3) : null,
+                locality = addressBaseRecord.locality,
+                longitude = addressBaseRecord.longitude,
+                lpi_logical_status = "Approved Preferred",
+                neverexport = false,
+                northing = addressBaseRecord.northing,
+                organisation = addressBaseRecord.organisation,
+                pao_text = addressBaseRecord.building_name,
+                parent_uprn = (long?)addressBaseRecord.parent_uprn,
+                planning_use_class = "",
+                postcode = addressBaseRecord.postcode,
+                postcode_nospace = addressBaseRecord.postcode.Replace(" ", ""),
+                property_shell = addressBaseRecord.classification_code.First() == 'P',
+                sao_text = addressBaseRecord.sub_building,
+                street_description = addressBaseRecord.street_name,
+                town = addressBaseRecord.town_name,
+                uprn = (long)addressBaseRecord.uprn,
+                usage_description = usage,
+                usage_primary = usage,
+                usrn = (int)addressBaseRecord.usrn,
+                ward = "",
+            };
+            return expectedNationalAddress;
+        }
+
+        private static int? ConvertToIntDate(string date)
+        {
+            if (string.IsNullOrEmpty(date)) return null;
+            var result = DateTime.ParseExact(date, "yyyy-MM-dd", null);
+            return Convert.ToInt32(result.ToString("yyyyMMdd"));
+        }
     }
 }
-
-// Example S3 notification event
-// {
-//   "Records": [
-//     {
-//       "eventVersion": "2.1",
-//       "eventSource": "aws:s3",
-//       "awsRegion": "us-east-2",
-//       "eventTime": "2019-09-03T19:37:27.192Z",
-//       "eventName": "ObjectCreated:Put",
-//       "userIdentity": {
-//         "principalId": "AWS:AIDAINPONIXQXHT3IKHL2"
-//       },
-//       // ...
-//       "s3": {
-//         "s3SchemaVersion": "1.0",
-//         "configurationId": "828aa6fc-f7b5-4305-8584-487c791949c1",
-//         "bucket": {
-//           "name": "lambda-artifacts-deafc19498e3f2df",
-//           "ownerIdentity": {
-//             "principalId": "A3I5XTEXAMAI3E"
-//           },
-//           "arn": "arn:aws:s3:::lambda-artifacts-deafc19498e3f2df"
-//         },
-//         "object": {
-//           "key": "b21b84d653bb07b05b1e6b33684dc11b",
-//           "size": 1305107,
-//           "eTag": "b21b84d653bb07b05b1e6b33684dc11b",
-//           "sequencer": "0C0F6F405D6ED209E1"
-//         }
-//       }
-//     }
-//   ]
-// }
