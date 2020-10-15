@@ -55,8 +55,6 @@ namespace AddressesDataPipeline.Database
                 $"'{TrimCode(x.classification_code)}', '',{x.classification_code?.First() == 'P'}, false, {CheckNumberForNullValue(x.easting)}, {CheckNumberForNullValue(x.northing)}, " +
                 $"{CheckNumberForNullValue(x.longitude)}, {CheckNumberForNullValue(x.latitude)}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, {CheckStringForNullValue(x.town_name)})"));
             Console.WriteLine($"Inserting records into {databaseToInsertInto}");
-            Console.WriteLine("SQL string:");
-            Console.Write(insertStatement + values);
             return _npgsqlConnection.Execute(insertStatement + values);
         }
 
@@ -178,8 +176,6 @@ namespace AddressesDataPipeline.Database
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
                 $" ORDER BY id {limitExpression} OFFSET @Cursor;";
             Console.WriteLine($"Getting {limit} records from address base");
-            Console.WriteLine("SQL string:");
-            Console.Write(selectText);
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new { Limit = limit, Cursor = numericCursor });
             return records;
