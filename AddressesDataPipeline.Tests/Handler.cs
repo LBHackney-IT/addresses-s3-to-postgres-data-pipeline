@@ -191,9 +191,11 @@ namespace AddressesDataPipeline.Tests
 
         private CsvUploadRecord CreateRandomAddressBaseRecord(string gazetteer)
         {
+            var singleAddressLine = string.Join(',', _fixture.CreateMany<string>(4));
             var gss_code = gazetteer == "local" ? _hackneyGssCode : "E06281728";
             return _fixture.Build<CsvUploadRecord>()
                 .With(c => c.gss_code, gss_code)
+                .With(a => a.single_line_address, singleAddressLine)
                 .Create();
         }
 
@@ -226,7 +228,7 @@ namespace AddressesDataPipeline.Tests
                 line1 = addressLines.ElementAt(0),
                 line2 = addressLines.Length > 1 ? addressLines.ElementAt(1) : null,
                 line3 = addressLines.Length > 2 ? addressLines.ElementAt(2) : null,
-                line4 = addressLines.Length > 3 ? addressLines.ElementAt(3) : null,
+                line4 = null,
                 locality = addressBaseRecord.locality,
                 longitude = addressBaseRecord.longitude,
                 lpi_logical_status = "Approved Preferred",

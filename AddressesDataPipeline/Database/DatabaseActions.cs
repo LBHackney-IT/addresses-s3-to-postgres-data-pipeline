@@ -189,11 +189,17 @@ namespace AddressesDataPipeline.Database
 
         private static string GetAddressLines(string address)
         {
-            var addressLines = address.Split(',').Select(line => string.IsNullOrWhiteSpace(line) ? "NULL" : $"'{line}'").ToList();
+            var addressLines = address.Split(',')
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => $"'{line}'")
+                .ToList();
+            addressLines.RemoveAt(addressLines.Count - 1);
             while (addressLines.Count < 4)
             {
                 addressLines.Add("NULL");
             }
+
+            if (addressLines.Count > 4) addressLines = addressLines.Take(4).ToList();
 
             return string.Join(", ", addressLines);
         }
