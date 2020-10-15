@@ -178,6 +178,7 @@ namespace AddressesDataPipeline.Database
             Console.WriteLine($"Getting {limit} records from address base");
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new { Limit = limit, Cursor = numericCursor });
+            Console.WriteLine($"Retrieved {records.Count()} records from address base");
             return records;
         }
 
