@@ -176,6 +176,7 @@ namespace AddressesDataPipeline.Database
                 $"row_number() OVER (PARTITION BY true::boolean) as id FROM dbo.address_base WHERE {onlyIncludeCorrectGazetteer}" +
                 $" ORDER BY id {limitExpression} OFFSET @Cursor;";
             Console.WriteLine($"Getting {limit} records from address base");
+            Console.Write(selectText);
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
                 selectText, new { Limit = limit, Cursor = numericCursor });
             return records;
