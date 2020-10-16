@@ -68,7 +68,7 @@ namespace AddressesDataPipeline.Tests
             InsertRecordIntoAddressBase(hackneyAddress);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest(), new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { limit = 10 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address");
 
@@ -92,7 +92,7 @@ namespace AddressesDataPipeline.Tests
             InsertRecordIntoAddressBase(hackneyAddress);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest { gazetteer = "national" }, new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { gazetteer = "national", limit = 10 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.national_address");
 
@@ -145,18 +145,20 @@ namespace AddressesDataPipeline.Tests
             };
             addressBaseRecord.ForEach(InsertRecordIntoAddressBase);
 
+            var insert = "INSERT INTO dbo.hackney_address (lpi_key, lpi_start_date, lpi_end_date, lpi_last_update_date, " +
+                         "uprn, blpu_start_date, blpu_end_date, blpu_last_update_date, property_shell, easting, northing, neverexport," +
+                         "longitude, latitude) VALUES ('00000000000001', 0, 0, 0, 10000262827, 0, 0, 0, false, 0, 0, false, 0, 0);";
+            DbConnection.Execute(insert);
+
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest { cursor = "00000000000001", limit = 2 }, new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { limit = 2 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
 
             var expectedNationalAddresses = addressBaseRecord.Skip(1).Take(2).Select(MapToExpectedAddressRecord).ToList();
-            results.Count.Should().Be(2);
-            results.First().Should().BeEquivalentTo(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
-            results.First().lpi_key.Should().Be("00000000000002");
-
-            results.Last().Should().BeEquivalentTo(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
-            results.Last().lpi_key.Should().Be("00000000000003");
+            results.Count.Should().Be(3);
+            results.Should().ContainEquivalentOf(expectedNationalAddresses.First(), options => options.Excluding(x => x.lpi_key));
+            results.Should().ContainEquivalentOf(expectedNationalAddresses.Last(), options => options.Excluding(x => x.lpi_key));
         }
 
         [Test]
@@ -172,7 +174,7 @@ namespace AddressesDataPipeline.Tests
             InsertRecordIntoAddressBase(hackneyAddress);
 
             var handler = new Handler();
-            handler.TransformData(new Handler.TransformDataRequest(), new Mock<ILambdaContext>().Object);
+            handler.TransformData(new Handler.TransformDataRequest { limit = 10 }, new Mock<ILambdaContext>().Object);
 
             var results = DbConnection.Query<Address>("SELECT * FROM dbo.hackney_address").ToList();
 

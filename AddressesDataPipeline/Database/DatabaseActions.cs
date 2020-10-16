@@ -35,27 +35,40 @@ namespace AddressesDataPipeline.Database
 
         public int TransformDataAndInsert(string tableName, string cursor, int? limit, string gazetteer)
         {
-            var records = GetRecordsFromAddressBase(cursor, limit, gazetteer);
-            var databaseToInsertInto = gazetteer == "local"
+            var databaseName = gazetteer == "local"
                 ? "hackney_address"
                 : "national_address";
-            var insertStatement = $"INSERT INTO dbo.{databaseToInsertInto}" +
-              "(lpi_key,uprn,usrn,parent_uprn,lpi_logical_status,sao_text,pao_text,building_number,street_description," +
-              "postcode,postcode_nospace,locality,gazetteer,organisation,ward,usage_description,usage_primary,blpu_class," +
-              "planning_use_class,property_shell,neverexport,easting,northing,longitude," +
-              "latitude,lpi_start_date,lpi_end_date,lpi_last_update_date,blpu_start_date,blpu_end_date,blpu_last_update_date," +
-              "line1,line2,line3,line4,town)" +
-              "VALUES ";
+            var currentMaxRecords = $"SELECT COUNT(*) FROM dbo.{databaseName};";
+            var numericCursor = _npgsqlConnection.Query<int>(currentMaxRecords).First();
+            Console.Write($"Number current records: {numericCursor}");
+            var totalRowsAdded = 0;
+            while (limit > 0)
+            {
+                var subLimit = limit > 10000 ? 10000 : limit;
+                limit -= subLimit;
+                var records = GetRecordsFromAddressBase(numericCursor, subLimit, gazetteer);
+                var insertStatement = $"INSERT INTO dbo.{databaseName}" +
+                                      "(lpi_key,uprn,usrn,parent_uprn,lpi_logical_status,sao_text,pao_text,building_number,street_description," +
+                                      "postcode,postcode_nospace,locality,gazetteer,organisation,ward,usage_description,usage_primary,blpu_class," +
+                                      "planning_use_class,property_shell,neverexport,easting,northing,longitude," +
+                                      "latitude,lpi_start_date,lpi_end_date,lpi_last_update_date,blpu_start_date,blpu_end_date,blpu_last_update_date," +
+                                      "line1,line2,line3,line4,town)" +
+                                      "VALUES ";
 
-            var values = string.Join(", ", records.Select(x =>
-                $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {CheckNumberForNullValue(x.parent_uprn)}, 'Approved Preferred', {CheckStringForNullValue(x.sub_building)}," +
-                $" {CheckStringForNullValue(x.building_name)}, {CheckStringForNullValue(x.building_number)}, {CheckStringForNullValue(x.street_name)}, {CheckStringForNullValue(x.postcode)}, {CheckStringForNullValue(x.postcode?.Replace(" ", ""))}, " +
-                $" '{x.locality ?? "NULL"}', '{gazetteer}', " +
-                $"{CheckStringForNullValue(x.organisation)}, '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
-                $"'{TrimCode(x.classification_code)}', '',{x.classification_code?.First() == 'P'}, false, {CheckNumberForNullValue(x.easting)}, {CheckNumberForNullValue(x.northing)}, " +
-                $"{CheckNumberForNullValue(x.longitude)}, {CheckNumberForNullValue(x.latitude)}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, {CheckStringForNullValue(x.town_name)})"));
-            Console.WriteLine($"Inserting records into {databaseToInsertInto}");
-            return _npgsqlConnection.Execute(insertStatement + values);
+                var values = string.Join(", ", records.Select(x =>
+                    $"('{x.id:D14}' ,{x.uprn}, {x.usrn}, {CheckNumberForNullValue(x.parent_uprn)}, 'Approved Preferred', {CheckStringForNullValue(x.sub_building)}," +
+                    $" {CheckStringForNullValue(x.building_name)}, {CheckStringForNullValue(x.building_number)}, {CheckStringForNullValue(x.street_name)}, {CheckStringForNullValue(x.postcode)}, {CheckStringForNullValue(x.postcode?.Replace(" ", ""))}, " +
+                    $" '{x.locality ?? "NULL"}', '{gazetteer}', " +
+                    $"{CheckStringForNullValue(x.organisation)}, '','{GetUsageDescription(x.classification_code)}', '{GetUsageDescription(x.classification_code)}', " +
+                    $"'{TrimCode(x.classification_code)}', '',{x.classification_code?.First() == 'P'}, false, {CheckNumberForNullValue(x.easting)}, {CheckNumberForNullValue(x.northing)}, " +
+                    $"{CheckNumberForNullValue(x.longitude)}, {CheckNumberForNullValue(x.latitude)}, 0, 0, 0, 0, 0, 0, {GetAddressLines(x.single_line_address)}, {CheckStringForNullValue(x.town_name)})"));
+                Console.WriteLine($"Inserting records into {databaseName}");
+                totalRowsAdded += _npgsqlConnection.Execute(insertStatement + values);
+                Console.Write($"Added {totalRowsAdded} in total");
+                numericCursor += totalRowsAdded;
+            }
+
+            return totalRowsAdded;
         }
 
         private static string CheckNumberForNullValue(double? value)
@@ -162,12 +175,11 @@ namespace AddressesDataPipeline.Database
             return createTableSql;
         }
 
-        private IEnumerable<CsvUploadRecord> GetRecordsFromAddressBase(string cursor, int? limit, string gazetteer)
+        private IEnumerable<CsvUploadRecord> GetRecordsFromAddressBase(long cursor, int? limit, string gazetteer)
         {
             var onlyIncludeCorrectGazetteer = gazetteer == "local"
                 ? $"gss_code = '{_hackneyGssCode}'"
                 : $"gss_code != '{_hackneyGssCode}'";
-            var numericCursor = Convert.ToInt64(cursor);
             var limitExpression = limit == null ? "" : "LIMIT @Limit";
 
             var selectText =
@@ -178,7 +190,7 @@ namespace AddressesDataPipeline.Database
             Console.WriteLine($"Getting {limit} records from address base");
             Console.Write(selectText);
             var records = _npgsqlConnection.Query<CsvUploadRecord>(
-                selectText, new { Limit = limit, Cursor = numericCursor });
+                selectText, new { Limit = limit, Cursor = cursor });
             return records;
         }
 
